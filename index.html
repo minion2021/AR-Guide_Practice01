@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Bag Stand AR</title>
+
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+  <style>
+    body { margin: 0; overflow: hidden; }
+  </style>
+
+  <script>
+    AFRAME.registerComponent("fit-model", {
+      init: function () {
+        this.el.addEventListener("model-loaded", () => {
+          const model = this.el.getObject3D("mesh");
+
+          // 모델의 크기와 중심을 계산합니다.
+          const copy = model.clone();
+          copy.updateMatrixWorld(true);
+          const box = new THREE.Box3().setFromObject(copy);
+          const size = box.getSize(new THREE.Vector3());
+          const center = box.getCenter(new THREE.Vector3());
+          const longest = Math.max(size.x, size.y, size.z);
+
+          if (!Number.isFinite(longest) || longest <= 0) return;
+
+          // 포스터 너비를 기준으로 크기를 맞춥니다.
+          const factor = 0.8 / longest;
+          model.scale.multiplyScalar(factor);
+          model.position.sub(center).multiplyScalar(factor);
+
+          // 모델이 포스터 앞쪽에 나타나게 합니다.
+          model.position.z += size.z * factor / 2 + 0.02;
+        });
+      }
+    });
+  </script>
+</head>
+
+<body>
+  <a-scene
+    mindar-image="imageTargetSrc: ./targets.mind"
+    color-space="sRGB"
+    renderer="colorManagement: true"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false">
+
+    <a-assets timeout="30000">
+      <a-asset-item
+        id="bag-model"
+        src="./Bag_Stand_Wood_02.glb">
+      </a-asset-item>
+    </a-assets>
+
+    <a-camera
+      position="0 0 0"
+      look-controls="enabled: false">
+    </a-camera>
+
+    <a-light type="ambient" intensity="0.9"></a-light>
+    <a-light type="directional" position="1 2 3" intensity="1"></a-light>
+
+    <a-entity mindar-image-target="targetIndex: 0">
+      <a-entity gltf-model="#bag-model" fit-model></a-entity>
+    </a-entity>
+
+  </a-scene>
+</body>
+</html>
